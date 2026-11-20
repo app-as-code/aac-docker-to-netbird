@@ -1,0 +1,81 @@
+service:
+  name: aac-docker-to-netbird
+  stage: prod
+  image_repo: registry.example.com/iac-environment/iac-platform-assets/docker-to-netbird
+  image_tag: 0.1.1
+  description: Reconciles netbird.expose.* container labels into NetBird reverse-proxy
+    services.
+  icon: https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/netbird.png
+  category: Container - NetBird
+  hostname: docker-to-netbird
+ports: []
+config:
+  domain_name: example.com
+  generate_hostname: false
+  integrations:
+    homepage:
+      enabled: true
+      href: '#'
+    autodns:
+      enabled: false
+    traefik:
+      enabled: false
+  schema_version: 2
+stage_overrides:
+  prod:
+    service:
+      hostname: docker-to-netbird
+    config:
+      generate_hostname: false
+secrets:
+  NETBIRD_API_URL: CHANGE_ME
+  NETBIRD_API_TOKEN: CHANGE_ME
+volumes:
+  var_run_docker_sock:
+    description: Docker socket (read-only) so the reconciler can watch container labels
+    type: bind
+    source: /var/run/docker.sock
+deployment_strategy:
+  main:
+    enabled: true
+    target_stage: prod
+  dev:
+    enabled: true
+    target_stage: dev
+  test:
+    enabled: false
+    target_stage: test
+  ansible-dev:
+    enabled: true
+    target_stage: dev
+  iac-dev:
+    enabled: true
+    target_stage: dev
+  template-dev:
+    enabled: true
+    target_stage: dev
+deployments:
+  docker_compose:
+    restart_policy: always
+    host_base_path: /export/docker
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '3'
+    volumes:
+    - var_run_docker_sock:/var/run/docker.sock:ro
+    environment:
+      TZ: '{{ vars.TZ }}'
+      NETBIRD_API_URL: '{{ secrets.NETBIRD_API_URL }}'
+      NETBIRD_API_TOKEN: '{{ secrets.NETBIRD_API_TOKEN }}'
+      NETBIRD_LABEL_PREFIX: '{{ vars.NETBIRD_LABEL_PREFIX }}'
+      CHECK_INTERVAL: '{{ vars.CHECK_INTERVAL }}'
+      RECONCILE_INTERVAL: '{{ vars.RECONCILE_INTERVAL }}'
+      LOG_LEVEL: '{{ vars.LOG_LEVEL }}'
+vars:
+  TZ: Europe/Berlin
+  NETBIRD_LABEL_PREFIX: netbird.expose
+  CHECK_INTERVAL: '60'
+  RECONCILE_INTERVAL: '300'
+  LOG_LEVEL: INFO

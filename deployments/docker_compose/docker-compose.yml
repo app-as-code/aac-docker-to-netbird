@@ -1,0 +1,56 @@
+services:
+  # --- Main Application Service ---
+  aac-docker-to-netbird:
+    image: "registry.example.com/iac-environment/iac-platform-assets/docker-to-netbird:0.1.1"
+    container_name: "aac-docker-to-netbird"
+    hostname: "docker-to-netbird"
+    restart: "always"
+
+
+    environment:
+      TZ: "Europe/Berlin"
+      NETBIRD_API_URL: "${NETBIRD_API_URL:?set NETBIRD_API_URL in .env (see .env.example)}"
+      NETBIRD_API_TOKEN: "${NETBIRD_API_TOKEN:?set NETBIRD_API_TOKEN in .env (see .env.example)}"
+      NETBIRD_LABEL_PREFIX: "netbird.expose"
+      CHECK_INTERVAL: "60"
+      RECONCILE_INTERVAL: "300"
+      LOG_LEVEL: "INFO"
+
+
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+
+    networks:
+      - interconnect
+      - stack_internal
+
+    labels:
+      homepage.group: "Container - NetBird"
+      homepage.name: "Docker To Netbird"
+      homepage.href: "#"
+      homepage.icon: "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/netbird.png"
+      homepage.description: "Reconciles netbird.expose.* container labels into NetBird reverse-proxy services."
+
+
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '3'
+
+
+
+networks:
+  secured:
+    name: "services-secured"
+    external: true
+  exposed:
+    name: "services-exposed"
+    external: true
+  interconnect:
+    name: "docker-default"
+    external: true
+  stack_internal:
+    name: "aac-docker-to-netbird_stack_internal"
+    driver: "bridge"
+
